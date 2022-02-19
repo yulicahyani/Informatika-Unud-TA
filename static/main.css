@@ -1,0 +1,90 @@
+body{
+    background: #ffff;
+}
+
+/* Footer */
+.site-header .navbar{
+    background-color: #FAF9F8;
+}
+
+.site-header .navbar-nav .nav-link {
+  color: #6287BB;
+  font-size: 18px;
+}
+
+.site-header .navbar-nav .nav-link:hover {
+  color: #30578D;
+}
+
+.site-header .navbar-nav .nav-link.active {
+  font-weight: 500;
+  color: #30578D;
+}
+
+/* Footer */
+.site-footer {
+    background-color: #FAF9F8;
+}
+
+.site-footer .nav-link {
+  color: #30578D;
+}
+
+.site-footer h4 {
+  color: #30578D;
+}
+
+.site-footer .col a {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    margin-bottom: 10px;
+    color: #6287BB;
+}
+
+.site-footer .col i{
+    color: #6287BB;
+}
+
+/* Identifikasi */
+#input-identifikasi {
+    background-color: #A6BADF;
+}
+
+.identifikasi h1 {
+    color: #0A3266;
+}
+
+.bahasa {
+    background-color: #6287BB;
+    border-radius: 10px;
+}
+
+.input-kalimat {
+    background-color: #ffff;
+    border-radius: 10px;
+}
+
+.btn-submit {
+    width: 200px;
+    background-color: #6287BB;
+    color: #ffff;
+}
+
+.identifikasi .btn-submit:hover {
+  background-color: #30578D;
+  color: #ffff;
+}
+
+.btn-identifikasi {
+    margin-right: 400px;
+}
+
+.result .card {
+    height: 250px;
+}
+
+.result .card-header {
+    background-color: #A6BADF;
+}
+

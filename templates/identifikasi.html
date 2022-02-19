@@ -1,0 +1,47 @@
+{% extends "main_layout.html" %}
+{% block content %}
+<section id="input-identifikasi" class="identifikasi">
+    <h1 class="pt-5 text-center mb-5">Identifikasi Ekspresi Idiomatik</h1>
+    <div class="d-inline text-dark p-1 ms-5">Bahasa :</div>
+    <div class="bahasa d-inline text-dark p-1 px-2">Indonesia</div>
+    <form action="{{ url_for('identifikasi')}}" method="POST" >
+        <div class="input-kalimat mt-2 shadow-lg p-3 bg-body rounded mx-5">
+            {% if kalimat %}
+            <input value="{{kalimat}}" class="form-control form-control-lg" name="input_kalimat" type="text" placeholder="Masukan kalimat disini........" aria-label=".form-control-lg example">
+            {% else%}
+            <input value="" class="form-control form-control-lg" name="input_kalimat" type="text" placeholder="Masukan kalimat disini........" aria-label=".form-control-lg example">
+            {% endif %}
+        </div>
+        <div class="bg-body p-2 w-100 mt-4 text-center">
+            <input class="btn btn-submit mt-4 btn-identifikasi" type="submit" name="submit_button" value="Identifikasi">
+            <input class="btn btn-submit mt-4" type="submit" name="submit_button" value="Cari Arti">
+        </div>
+    </form>
+</section>
+
+<section id="result-identifikasi" class="result mb-5">
+    <div class="row align-items-center mx-5">
+        <div class="col me-5">
+            <div class="card">
+              <h5 class="card-header text-center">Ekspresi Idiomatik</h5>
+              <div class="card-body">
+                  {% if idiom %}
+                  <p class="card-text">{{idiom}}</p>
+                  {% endif %}
+              </div>
+            </div>
+        </div>
+        <div class="col ms-2">
+            <div class="card">
+              <h5 class="card-header text-center">Arti Ekspresi Idiomatik</h5>
+              <div class="card-body">
+                  {% if arti %}
+                  <p class="card-text">{{arti}}</p>
+                  {% endif %}
+              </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+{% endblock %}
