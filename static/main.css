@@ -88,3 +88,20 @@ body{
     background-color: #A6BADF;
 }
 
+/* Index */
+
+/* Home */
+#home {
+    background-color: #A6BADF;
+}
+#home h2, p{
+    color: #0A3266;
+}
+#home .btn {
+    background-color: #30578D;
+    width: 150px;
+}
+#home .btn a {
+    text-decoration: none;
+    color: #ffff;
+}

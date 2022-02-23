@@ -1,4 +1,23 @@
 {% extends "main_layout.html" %}
 {% block content %}
-<p>Halo Web</p>
+<section id="home">
+     <div class="jumbotron jumbotron-fluid">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6 pt-5">
+            <h2>
+              Apa itu Idiom? Penasaran dengan artinya? Ayo mengenal lebih jauh tentang ekspresi Idiomatik
+            </h2>
+            <p>
+              Masukan kalimat dan sistem otomatis mengidentifikasi idiom dan menampilkan artinya
+            </p>
+            <button type="button" class="btn btn-secondary "><a href="{{ url_for('identifikasi')}}"> Mulai </a></button>
+          </div>
+          <div class="col-md-6 text-center">
+            <img src="static/image/home_img.png" alt="" width="600px">
+          </div>
+        </div>
+      </div>
+    </div>
+</section>
 {% endblock %}
