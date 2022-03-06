@@ -39,9 +39,9 @@ def identifikasi():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    transformers_logger = logging.getLogger("transformers")
-    transformers_logger.setLevel(logging.WARNING)
+    # logging.basicConfig(level=logging.INFO)
+    # transformers_logger = logging.getLogger("transformers")
+    # transformers_logger.setLevel(logging.WARNING)
     torch.multiprocessing.freeze_support()
     model = IdiomIdentification()
     app.run(debug=True)

@@ -3,22 +3,83 @@ import torch
 import dill
 from nltk.tokenize import WordPunctTokenizer
 import nltk
+import math
+import string
+import re
+import transformers
+from transformers import BertModel, BertTokenizer
+from torch import nn
+
+class TextClassifier(nn.Module):
+
+    def __init__(self, n_classes, dropout=0.3):
+        super(TextClassifier, self).__init__()
+        self.bert = BertModel.from_pretrained('cahya/bert-base-indonesian-522M')
+        self.drop = nn.Dropout(p=dropout)
+        self.out = nn.Linear(self.bert.config.hidden_size, n_classes)
+
+    def forward(self, input_ids, attention_mask):
+        _, pooled_output = self.bert(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            return_dict=False
+        )
+        output = self.drop(pooled_output)
+        return self.out(output)
+
 
 class IdiomIdentification():
 
     def __init__(self):
-        self.classification_model = torch.load('model/classification_model.bin')
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.class_names = ['kalimat_biasa', 'kalimat_idiom']
+        self.tokenizer = BertTokenizer.from_pretrained('cahya/bert-base-indonesian-522M')
+        self.classification_model = TextClassifier(len(self.class_names))
+        self.classification_model.load_state_dict(
+            torch.load('model/classification.bin'))
+        self.classification_model = self.classification_model.to(self.device)
         self.hmm_tagger_model = dill.load(open('model/tagger_model.dill', 'rb'))
         self.similarity_model = torch.load('model/word_sim.bin')
         self.truth_discovery_model = dill.load(open('model/truth_discovery.dill', 'rb'))
 
+    def preprocessing(self, kalimat, remove_punctuation=False, tokenization=False, lowercase=False):
+        if (remove_punctuation):
+            punc = '''!()-[]{};:'"\<>/?@#$%^&*_~'''
+            kalimat = kalimat.translate(str.maketrans('', '', punc))
+            kalimat = re.sub(r'/s+', ' ', kalimat).strip()
+
+        if (tokenization):
+            word_punct_tokenizer = WordPunctTokenizer()
+            kalimat = word_punct_tokenizer.tokenize(kalimat)
+
+        if (lowercase):
+            kalimat = str.lower(kalimat)
+
+        return kalimat
+
     def idiom_classification(self, kalimat):
-        class_names = ['kalimat_biasa', 'kalimat_idiom']
-        predictions = self.classification_model.predict([kalimat])
-        kategori = class_names[int(predictions[0])]
+        encoded_text = self.tokenizer.encode_plus(
+            kalimat,
+            max_length=40,
+            add_special_tokens=True,
+            return_token_type_ids=False,
+            padding='max_length',
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors='pt',
+        )
+
+        input_ids = encoded_text['input_ids'].to(self.device)
+        attention_mask = encoded_text['attention_mask'].to(self.device)
+
+        output = self.classification_model(input_ids, attention_mask)
+        _, prediction = torch.max(output, dim=1)
+
+        kategori = self.class_names[prediction]
+
         return kategori
 
-    def hasNumbers(inputString):
+    def hasNumbers(self, inputString):
         result = False
         for char in list(inputString):
             if (char.isdigit()):
@@ -68,8 +129,7 @@ class IdiomIdentification():
         return word, tag
 
     def pos_tagging(self, kalimat):
-        word_punct_tokenizer = WordPunctTokenizer()
-        kalimat_token = word_punct_tokenizer.tokenize(kalimat)
+        kalimat_token = self.preprocessing(kalimat, tokenization=True)
         tagging = self.hmm_tagger_model.tag(kalimat_token)
         final_tag = []
         for pt in tagging:
@@ -107,16 +167,20 @@ class IdiomIdentification():
 
     def similarity(self, frasa):
         frasa_pred = []
-        for f in frasa:
-            sim_score = self.count_score_similarity(f)
-            if sim_score > 0.5:
-                frasa_pred.append(f)
+        if len(frasa) == 0:
+            frasa_pred = []
+        else:
+            for f in frasa:
+                sim_score = self.count_score_similarity(f)
+                if sim_score > 0.5:
+                    frasa_pred.append(f)
 
         return frasa_pred
 
     def validasi(self, frasa):
         frasa_idiom = []
         for f in frasa:
+            f = self.preprocessing(f, lowercase=True)
             kategori = self.truth_discovery_model.predict([f])[0]
             if kategori == 1:
                 frasa_idiom.append(f)
@@ -124,6 +188,7 @@ class IdiomIdentification():
         return frasa_idiom
 
     def _predict(self, kalimat):
+        kalimat = self.preprocessing(kalimat, remove_punctuation=True)
         klasifikasi = self.idiom_classification(kalimat)
 
         if (klasifikasi == 'kalimat_biasa'):
