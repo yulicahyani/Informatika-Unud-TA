@@ -1,0 +1,67 @@
+{% extends "main_layout.html" %}
+{% block content %}
+<section id="input-kamus" class="kamus">
+    <h1 class="pt-5 text-center mb-5">Kamus Ekspresi Idiomatik</h1>
+    <div class="d-inline text-dark p-1 ms-5">Bahasa :</div>
+    <div class="bahasa d-inline text-dark p-1 px-2">Indonesia</div>
+    <form action="{{ url_for('kamus')}}" method="POST" >
+        <div class="input mt-2 shadow-lg p-3 bg-body rounded mx-5 d-flex flex-row">
+            {% if input %}
+            <input value="{{input}}" class="form-control form-control-lg mx-2" name="inputan" type="text" placeholder="Masukan huruf, kata atau frasa disini........" aria-label=".form-control-lg example">
+            {% else %}
+            <input value="" class="form-control form-control-lg mx-2" name="inputan" type="text" placeholder="Masukan huruf, kata atau frasa disini........" aria-label=".form-control-lg example">
+            {% endif %}
+            <input class="btn btn-submit" type="submit" name="submit_button" value="Cari Idiom">
+        </div>
+        <div class="bg-body p-2 w-100 mt-4 text-center">
+        </div>
+    </form>
+</section>
+
+<section id="result-kamus" class="result-kmus mb-5">
+    <div class="card-header row align-items-center mx-5 p-1">
+        <h6 class="col text-center mt-1 ">Kata Pembentuk</h6>
+        <h6 class="col text-center mt-1 ">Ekspresi Idiomatik</h6>
+        <h6 class="col text-center mt-1 ">Arti</h6>
+        <h6 class="col text-center mt-1 ">Contoh Penggunaan</h6>
+    </div>
+    {% if hasil_idiom %}
+    {% for i in hasil_idiom %}
+    {% set kata, idiom, arti, contoh_kalimat = i %}
+    <div class="row align-items-center mx-5">
+        <div class="col p-0">
+            <div class="card">
+                <div class="card-body p-2">
+                    <p class="card-text">{{kata}}</p>
+                  </div>
+            </div>
+        </div>
+        <div class="col p-0">
+            <div class="card">
+                <div class="card-body p-2">
+                    <p class="card-text">{{idiom}}</p>
+                  </div>
+            </div>
+        </div>
+        <div class="col p-0">
+            <div class="card">
+                <div class="card-body p-2">
+                    <p class="card-text">{{arti}}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col p-0">
+            <div class="card">
+                <div class="card-body p-2">
+                    <p class="card-text">{{contoh_kalimat}}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="mx-5 text-center p-1 mt-2">{{keterangan}}</p>
+    {% endif %}
+
+</section>
+{% endblock %}

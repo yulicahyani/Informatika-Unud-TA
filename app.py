@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 import math
 from identifikasi_idiom import IdiomIdentification
-from identifikasi_idiom import TokenSimilarity
+import identifikasi_idiom
 import torch
 import logging
 import warnings
@@ -20,15 +20,19 @@ def identifikasi():
     if request.method == 'POST':
         kalimat_input = request.form['input_kalimat']
         hasil = model.predict([kalimat_input])
-        kal = hasil[0][0]
+        kal = kalimat_input
         hasil_identifikasi = hasil[0][2]
 
         if hasil_identifikasi == 'none':
-            frasa_idiom = 'Tidak terdapat idiom yang teridentifikasi'
+            frasa_idiom = 'tidak terdapat idiom yang teridentifikasi'
         else:
             frasa_idiom = hasil_identifikasi
 
-        arti_idiom = 'ini artinya'
+        hasil_arti = identifikasi_idiom.kamus_idiom(frasa_idiom)
+        if len(hasil_arti) == 0:
+            arti_idiom = 'arti dari idiom tidak ditemukan'
+        else:
+            kata, idiom, arti_idiom, contoh_kalimat = hasil_arti[0]
 
         if request.form['submit_button'] == 'Identifikasi':
             return render_template("identifikasi.html",kalimat=kal, idiom=frasa_idiom)
@@ -38,10 +42,23 @@ def identifikasi():
         return render_template("identifikasi.html")
 
 
+@app.route('/kamus-idiom', methods=['GET', 'POST'])
+def kamus():
+    ket = 'Hasil pencarian akan tampil disini'
+    if request.method == 'POST':
+        inputan = request.form['inputan']
+        if request.form['submit_button'] == 'Cari Idiom':
+            hasil = identifikasi_idiom.kamus_idiom(inputan)
+            ket = 'Idiom tidak ditemukan dalam kamus'
+            return render_template("kamus.html",hasil_idiom = hasil, input=inputan, keterangan = ket)
+    else:
+        return render_template("kamus.html", keterangan = ket)
+
+
 if __name__ == '__main__':
-    # logging.basicConfig(level=logging.INFO)
-    # transformers_logger = logging.getLogger("transformers")
-    # transformers_logger.setLevel(logging.WARNING)
+    logging.basicConfig(level=logging.INFO)
+    transformers_logger = logging.getLogger("transformers")
+    transformers_logger.setLevel(logging.WARNING)
     torch.multiprocessing.freeze_support()
     model = IdiomIdentification()
     app.run(debug=True)

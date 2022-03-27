@@ -1,31 +1,82 @@
-# from torch._C import Stream
+import re
+import string
+from torch import clamp
+from transformers import AutoTokenizer, AutoModel
+from sklearn.metrics.pairwise import cosine_similarity
+
+MODEL_NAME = 'cahya/bert-base-indonesian-522M'
+
+
+class TokenSimilarity():
+
+    def __init__(self, from_pretrained: str):
+        self.tokenizer = AutoTokenizer.from_pretrained(from_pretrained)
+        self.model = AutoModel.from_pretrained(from_pretrained)
+
+    def __process(self, first_token: str, second_token: str):
+        inputs = self.tokenizer([first_token, second_token],
+                                max_length=self.max_length,
+                                truncation=self.truncation,
+                                padding=self.padding,
+                                return_tensors='pt')
+
+        attention = inputs.attention_mask
+        outputs = self.model(**inputs)
+        embeddings = outputs[0]
+        mask = attention.unsqueeze(-1).expand(embeddings.shape).float()
+        masked_embeddings = embeddings * mask
+
+        summed = masked_embeddings.sum(1)
+        counts = clamp(mask.sum(1), min=1e-9)
+        mean_pooled = summed / counts
+
+        return mean_pooled.detach().numpy()
+
+    def predict(self, first_token: str, second_token: str, max_length: int = 40,
+                truncation: bool = True, padding: str = "max_length"):
+        self.max_length = max_length
+        self.truncation = truncation
+        self.padding = padding
+
+        mean_pooled_arr = self.__process(first_token, second_token)
+        similarity = cosine_similarity([mean_pooled_arr[0]], [mean_pooled_arr[1]])
+
+        return similarity
+
 import torch
 import dill
 from nltk.tokenize import WordPunctTokenizer
 import nltk
 import math
 import string
+import pandas as pd
 import re
 import transformers
 from transformers import BertModel, BertTokenizer
 from torch import nn
+import warnings
+warnings.filterwarnings("ignore", 'This pattern has match groups')
 
-class TextClassifier(nn.Module):
+class BertClassifier(nn.Module):
 
     def __init__(self, n_classes, dropout=0.3):
-        super(TextClassifier, self).__init__()
-        self.bert = BertModel.from_pretrained('cahya/bert-base-indonesian-522M')
+        super(BertClassifier, self).__init__()
+        self.bert = self.bert = BertModel.from_pretrained(MODEL_NAME)
         self.drop = nn.Dropout(p=dropout)
         self.out = nn.Linear(self.bert.config.hidden_size, n_classes)
 
-    def forward(self, input_ids, attention_mask):
+    def forward(self, input_ids, attention_mask, token_type_ids):
         _, pooled_output = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
             return_dict=False
         )
         output = self.drop(pooled_output)
-        return self.out(output)
+        logits = self.out(output)
+        classifier = torch.nn.functional.softmax(logits, dim=1)
+        _, pred = torch.max(classifier, dim=1)
+        return logits, pred
 
 
 class IdiomIdentification():
@@ -33,16 +84,16 @@ class IdiomIdentification():
     def __init__(self):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.class_names = ['kalimat_biasa', 'kalimat_idiom']
-        self.tokenizer = BertTokenizer.from_pretrained('cahya/bert-base-indonesian-522M')
-        self.classification_model = TextClassifier(len(self.class_names))
-        self.classification_model.load_state_dict(
-            torch.load('model/classification.bin'))
+        self.tokenizer = BertTokenizer.from_pretrained(MODEL_NAME)
+        self.classification_model = BertClassifier(len(self.class_names))
+        self.classification_model.load_state_dict(torch.load('model/classification.bin'))
         self.classification_model = self.classification_model.to(self.device)
         self.hmm_tagger_model = dill.load(open('model/tagger_model.dill', 'rb'))
-        self.similarity_model = torch.load('model/word_sim.bin')
+        self.similarity_model = TokenSimilarity(MODEL_NAME)
         self.truth_discovery_model = dill.load(open('model/truth_discovery.dill', 'rb'))
+        self.idiom_example_df = pd.read_csv('data/IDENTIFIKASI_KLASIFIKASI/idiom-example.csv')
 
-    def preprocessing(self, kalimat, remove_punctuation=False, tokenization=False, lowercase=False):
+    def text_preprocessing(self, kalimat, remove_punctuation=False, tokenization=False, lowercase=False):
         if (remove_punctuation):
             punc = '''!()-[]{};:'"\<>/?@#$%^&*_~'''
             kalimat = kalimat.translate(str.maketrans('', '', punc))
@@ -57,12 +108,12 @@ class IdiomIdentification():
 
         return kalimat
 
-    def idiom_classification(self, kalimat):
+    def idiom_sentence_classification(self, kalimat):
         encoded_text = self.tokenizer.encode_plus(
             kalimat,
             max_length=40,
             add_special_tokens=True,
-            return_token_type_ids=False,
+            return_token_type_ids=True,
             padding='max_length',
             truncation=True,
             return_attention_mask=True,
@@ -71,11 +122,11 @@ class IdiomIdentification():
 
         input_ids = encoded_text['input_ids'].to(self.device)
         attention_mask = encoded_text['attention_mask'].to(self.device)
+        token_type_ids = encoded_text['token_type_ids'].to(self.device)
 
-        output = self.classification_model(input_ids, attention_mask)
-        _, prediction = torch.max(output, dim=1)
+        output, pred = self.classification_model(input_ids, attention_mask, token_type_ids)
 
-        kategori = self.class_names[prediction]
+        kategori = self.class_names[pred]
 
         return kategori
 
@@ -93,11 +144,14 @@ class IdiomIdentification():
         punc.append('"')
         punc.append("'")
 
-        dates = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober',
-                 'November', 'Desember', \
-                 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des', \
-                 'januari', 'februari', 'maret', 'april', 'mei', 'juni', 'juli', 'agustus', 'september', 'oktober',
-                 'november', 'desember', \
+        dates = ['Januari', 'Februari', 'Maret', \
+                 'April', 'Mei', 'Juni', 'Juli', 'Agustus', \
+                 'September', 'Oktober', 'November', 'Desember', \
+                 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', \
+                 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des', \
+                 'januari', 'februari', 'maret', 'april', \
+                 'mei', 'juni', 'juli', 'agustus', \
+                 'september', 'oktober', 'november', 'desember', \
                  'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'
                  ]
 
@@ -129,7 +183,7 @@ class IdiomIdentification():
         return word, tag
 
     def pos_tagging(self, kalimat):
-        kalimat_token = self.preprocessing(kalimat, tokenization=True)
+        kalimat_token = self.text_preprocessing(kalimat, tokenization=True)
         tagging = self.hmm_tagger_model.tag(kalimat_token)
         final_tag = []
         for pt in tagging:
@@ -139,29 +193,34 @@ class IdiomIdentification():
         return final_tag
 
     def chunking(self, kalimat_tagged):
-        grammar = ["CHUNK: {<NN>{2,}}", "CHUNK: {<NN><CD>}", "CHUNK: {<CD><NN>}", "CHUNK: {<NNP><NN>}",
-                   "CHUNK: {<VB><NN>}",
-                   "CHUNK: {<VB><JJ>}", "CHUNK: {<VB><CD>}", "CHUNK: {<JJ><NN>}", "CHUNK: {<NN><JJ>}",
-                   "CHUNK: {<JJ><JJ>}"]
+        grammar = ["CHUNK: {<NN>{2,}}", "CHUNK: {<NN><JJ>}",
+                   "CHUNK: {<NN><VB>}", "CHUNK: {<CD><NN>}",
+                   "CHUNK: {<VB><VB>}", "CHUNK: {<VB><NN>}",
+                   "CHUNK: {<VB><JJ>}", "CHUNK: {<VB><CD>}",
+                   "CHUNK: {<JJ><NN>}", "CHUNK: {<JJ><JJ>}"]
 
-        extract = []
+        frasa_kandidat = []
 
         for i in grammar:
             cp = nltk.RegexpParser(i)
             result = cp.parse(kalimat_tagged)
 
-            leaves = [chunk.leaves() for chunk in result if
-                      ((type(chunk) == nltk.tree.Tree) and chunk.label() == 'CHUNK')]
-            noun_bigram_groups = [list(nltk.bigrams([w for w, t in leaf])) for leaf in leaves]
+            leaves = [chunk.leaves() for chunk in result if ((type(chunk) == nltk.tree.Tree) and chunk.label() == 'CHUNK')]
+            bigram_groups = [list(nltk.bigrams([w for w, t in leaf])) for leaf in leaves]
 
-            ph = [' '.join(nouns) for group in noun_bigram_groups for nouns in group]
-            extract = extract + ph
+            fr = [' '.join(w) for group in bigram_groups for w in group]
+            frasa_kandidat = frasa_kandidat + fr
 
-        return extract
+        return frasa_kandidat
 
     def count_score_similarity(self, frasa):
         token = frasa.split()
         similarity_score = self.similarity_model.predict(token[0], token[1])[0][0]
+        random = self.idiom_example_df.sample(n=5)
+        idiom_example = random['idiom_example'].values
+
+        for idiom in idiom_example:
+            similarity_score = similarity_score + self.similarity_model.predict(frasa, idiom)[0][0]
 
         return similarity_score
 
@@ -180,7 +239,7 @@ class IdiomIdentification():
     def validasi(self, frasa):
         frasa_idiom = []
         for f in frasa:
-            f = self.preprocessing(f, lowercase=True)
+            f = self.text_preprocessing(f, lowercase=True)
             kategori = self.truth_discovery_model.predict([f])[0]
             if kategori == 1:
                 frasa_idiom.append(f)
@@ -188,8 +247,8 @@ class IdiomIdentification():
         return frasa_idiom
 
     def _predict(self, kalimat):
-        kalimat = self.preprocessing(kalimat, remove_punctuation=True)
-        klasifikasi = self.idiom_classification(kalimat)
+        kalimat = self.text_preprocessing(kalimat, remove_punctuation=True)
+        klasifikasi = self.idiom_sentence_classification(kalimat)
 
         if (klasifikasi == 'kalimat_biasa'):
             frasa = 'none'
@@ -212,75 +271,31 @@ class IdiomIdentification():
         return predicted_result
 
 
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 
-import re
-import string
-from torch import clamp
-from transformers import AutoTokenizer, AutoModel
-from sklearn.metrics.pairwise import cosine_similarity
+def kamus_idiom(input):
+  data = pd.read_csv("data/IDENTIFIKASI_KLASIFIKASI/kamus-idiom-dataset.csv")
+  factory = StemmerFactory()
+  stemmer = factory.create_stemmer()
+  input = str.lower(input)
+  if len(input) == 1:
+    result = data[data['huruf']==input]
+    result = result.drop(['huruf'], axis=1)
+    result = result.values.tolist()
+    return result
 
-class TokenSimilarity:
+  if len(input) > 1 and len(input.split()) == 1:
+    input = stemmer.stem(input)
+    r = input
+    result = data[data['kata'].str.contains(r, na=False)]
+    result = result.drop(['huruf'], axis=1)
+    result = result.values.tolist()
+    return result
 
-    def load_pretrained(self, from_pretrained: str = "indobenchmark/indobert-base-p1"):
-        self.tokenizer = AutoTokenizer.from_pretrained(from_pretrained)
-        self.model = AutoModel.from_pretrained(from_pretrained)
-
-    def __cleaning(self, text: str):
-        # clear punctuations
-        text = text.translate(str.maketrans('', '', string.punctuation))
-
-        # clear multiple spaces
-        text = re.sub(r'/s+', ' ', text).strip()
-
-        return text
-
-    def __process(self, first_token: str, second_token: str):
-        inputs = self.tokenizer([first_token, second_token],
-                                max_length=self.max_length,
-                                truncation=self.truncation,
-                                padding=self.padding,
-                                return_tensors='pt')
-
-        attention = inputs.attention_mask
-
-        outputs = self.model(**inputs)
-
-        # get the weights from the last layer as embeddings
-        embeddings = outputs[0]  # when used in older transformers version
-        # embeddings = outputs.last_hidden_state # when used in newer one
-
-        # add more dimension then expand tensor
-        # to match embeddings shape by duplicating its values by rows
-        mask = attention.unsqueeze(-1).expand(embeddings.shape).float()
-
-        masked_embeddings = embeddings * mask
-
-        # MEAN POOLING FOR 2ND DIMENSION
-        # first, get sums by 2nd dimension
-        # second, get counts of 2nd dimension
-        # third, calculate the mean, i.e. sums/counts
-        summed = masked_embeddings.sum(1)
-        counts = clamp(mask.sum(1), min=1e-9)
-        mean_pooled = summed / counts
-
-        # return mean pooling as numpy array
-        return mean_pooled.detach().numpy()
-
-    def predict(self, first_token: str, second_token: str,
-                return_as_embeddings: bool = False, max_length: int = 16,
-                truncation: bool = True, padding: str = "max_length"):
-        self.max_length = max_length
-        self.truncation = truncation
-        self.padding = padding
-
-        first_token = self.__cleaning(first_token)
-        second_token = self.__cleaning(second_token)
-
-        mean_pooled_arr = self.__process(first_token, second_token)
-        if return_as_embeddings:
-            return mean_pooled_arr
-
-        # calculate similarity
-        similarity = cosine_similarity([mean_pooled_arr[0]], [mean_pooled_arr[1]])
-
-        return similarity
+  if len(input) > 1 and len(input.split()) > 1:
+    input = input.split()
+    r = stemmer.stem(input[0]) + '(.*?)' + stemmer.stem(input[1])
+    result = data[data['idiom'].str.contains(r, na=False)]
+    result = result.drop(['huruf'], axis=1)
+    result = result.values.tolist()
+    return result

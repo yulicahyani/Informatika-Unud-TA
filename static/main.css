@@ -46,6 +46,32 @@ body{
     color: #6287BB;
 }
 
+/* Kamus */
+
+.kamus .btn-submit:hover {
+  background-color: #30578D;
+  color: #ffff;
+}
+
+#input-kamus {
+    background-color: #A6BADF;
+}
+
+.kamus h1 {
+    color: #0A3266;
+}
+
+.result-kmus .card {
+    height: 100px;
+}
+
+.result-kmus .card-header {
+    background-color: #A6BADF;
+}
+#result-kamus .card-body p {
+    font-size:14px;
+}
+
 /* Identifikasi */
 #input-identifikasi {
     background-color: #A6BADF;
