@@ -38,10 +38,10 @@
     </main>
 
     <!--  Footer -->
-    <footer class="site-footer">
+    <footer class="site-footer" id="footer">
         <div class="container-fluid">
           <div class="row align-items-center">
-            <div class="col">
+            <div class="col mt-2 sos-logo">
                 <img src="static/image/logo.png" alt="" width="130" height="23">
                 <p class="mt-2">Ayo mengenal lebih jauh tentang ekspresi Idiomatik. Masukkan kalimat dan sistem otomatis mengidentifikasi idiom dan menampilkan artinya.</p>
                 <nav class="nav">
@@ -50,13 +50,13 @@
                   <a class="nav-link" href="https://id.linkedin.com"><i class="fa-brands fa-linkedin"></i></a>
                 </nav>
             </div>
-            <div class="col ms-5">
+            <div class="col tautan" >
                 <h4>Tautan</h4>
                 <a href="{{ url_for('index')}}">Beranda</a>
                 <a href="{{ url_for('identifikasi')}}">Identifikasi Idiom</a>
                 <a href="{{ url_for('kamus')}}">Kamus Idiom</a>
             </div>
-            <div class="col">
+            <div class="col mt-3 kontak" >
                 <h4>Kontak</h4>
                 <p>
                     <i class="fa-solid fa-envelope"></i>

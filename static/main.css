@@ -114,6 +114,13 @@ body{
     background-color: #A6BADF;
 }
 
+    #result-identifikasi .idiom{
+        margin-right: 20px;
+    }
+    #result-identifikasi .arti{
+        margin-left: 20px;
+    }
+
 /* Index */
 
 /* Home */
@@ -130,4 +137,212 @@ body{
 #home .btn a {
     text-decoration: none;
     color: #ffff;
+}
+
+/*footer*/
+    #footer .sos-logo {
+        margin-right: 50px;
+    }
+
+    #footer .tautan{
+        margin-left: 60px;
+        margin-bottom: 16px;
+    }
+
+    #footer .kontak{
+        margin-right: 0px;
+    }
+
+
+/* Responsive */
+/* tablet */
+@media screen and (max-width: 768px) {
+    /*home*/
+    #home p{
+        font-size: 16px;
+    }
+    #home .title{
+        text-align: center;
+    }
+    #home h2, p{
+        text-align: center;
+    }
+    #home img {
+        width: 500px;
+    }
+
+    /*Footer*/
+    #footer p, a, i {
+        font-size: 12px;
+        text-align: left;
+    }
+    #footer h4 {
+        font-size: 18px;
+    }
+    #footer .sos-logo {
+        margin-right: 10px;
+    }
+    #footer .tautan{
+        margin-left: 10px;
+        margin-bottom: 34px;
+    }
+    #footer .kontak{
+        margin-right: 0px;
+    }
+
+    /*Identifikasi*/
+    .input-kalimat .form-control-lg {
+        font-size: 16px;
+    }
+    .btn-identifikasi {
+        margin-right: 150px;
+    }
+    .btn-submit {
+        width: 150px;
+    }
+    #result-identifikasi h5 {
+        font-size: 16px;
+    }
+    #result-identifikasi p {
+        font-size: 15px;
+        text-align: left;
+    }
+    #result-identifikasi .card{
+        width: 250px;
+        height: 250px;
+    }
+    #result-identifikasi .idiom{
+        margin-right: 0px;
+    }
+    #result-identifikasi .arti{
+        margin-right: 0px;
+    }
+
+    /*Kamus*/
+    .input .form-control-lg {
+        font-size: 16px;
+    }
+    .btn-submit {
+        width: 150px;
+    }
+    #result-kamus h6 {
+        font-size: 14px;
+    }
+    #result-kamus .card-body p {
+        font-size: 10px;
+        text-align: left;
+    }
+
+
+
+}
+
+/* mobile */
+@media screen and (max-width: 576px) {
+
+     /*home*/
+    #home p{
+        font-size: 12px;
+    }
+    #home .title{
+        text-align: center;
+    }
+    #home h2, p{
+        text-align: center;
+    }
+    #home h2 {
+        font-size: 20px;
+    }
+    #home img {
+        width: 350px;
+    }
+
+    /*Footer*/
+    #footer p, a, i {
+        font-size: 10px;
+        text-align: left;
+    }
+    #footer img {
+        width: 130px;
+        height: 20px;
+    }
+    #footer h4 {
+        font-size: 14px;
+    }
+    #footer .sos-logo {
+        margin-right: 5px;
+    }
+    #footer .tautan{
+        margin-left: 5px;
+        margin-bottom: 14px;
+    }
+    #footer .kontak{
+        margin-right: 0px;
+    }
+
+    /*Identifikasi*/
+    .input-kalimat .form-control-lg {
+        font-size: 14px;
+    }
+    #input-identifikasi .text-bahasa {
+        font-size: 12px;
+    }
+    .btn-identifikasi {
+        margin-right: 60px;
+    }
+    .btn-submit {
+        width: 80px;
+        font-size: 12px;
+    }
+    #result-identifikasi h5 {
+        font-size: 12px;
+    }
+    #result-identifikasi p {
+        font-size: 12px;
+        text-align: left;
+    }
+    #result-identifikasi .card{
+        width: 270px;
+        height: 100px;
+    }
+    #result-identifikasi .idiom{
+        margin-right: 0px;
+        margin-left: 0px;
+    }
+    #result-identifikasi .arti{
+        margin-left: 0px;
+        margin-top: 10px;
+        margin-right: 0px
+    }
+
+    .identifikasi h1 {
+        font-size: 20px;
+    }
+
+    /*Kamus*/
+    .kamus h1 {
+        font-size: 20px;
+    }
+    .input .form-control-lg {
+        font-size: 14px;
+    }
+    #input-kamus .text-bahasa {
+        font-size: 12px;
+    }
+    .btn-submit {
+        width: 80px;
+        font-size: 12px;
+    }
+    #result-kamus h6 {
+        font-size: 10px;
+    }
+    #result-kamus .card-body p {
+        font-size: 6px;
+        text-align: left;
+    }
+
+    .result-kmus .card {
+        height: 75px;
+    }
+
 }

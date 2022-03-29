@@ -2,8 +2,8 @@
 {% block content %}
 <section id="input-identifikasi" class="identifikasi">
     <h1 class="pt-5 text-center mb-5">Identifikasi Ekspresi Idiomatik</h1>
-    <div class="d-inline text-dark p-1 ms-5">Bahasa :</div>
-    <div class="bahasa d-inline text-dark p-1 px-2">Indonesia</div>
+    <div class="d-inline text-dark p-1 ms-5 text-bahasa">Bahasa :</div>
+    <div class="bahasa d-inline text-dark p-1 px-2 text-bahasa">Indonesia</div>
     <form action="{{ url_for('identifikasi')}}" method="POST" >
         <div class="input-kalimat mt-2 shadow-lg p-3 bg-body rounded mx-5">
             {% if kalimat %}
@@ -21,7 +21,7 @@
 
 <section id="result-identifikasi" class="result mb-5">
     <div class="row align-items-center mx-5">
-        <div class="col me-5">
+        <div class="col idiom">
             <div class="card">
               <h5 class="card-header text-center">Ekspresi Idiomatik</h5>
               <div class="card-body">
@@ -31,7 +31,7 @@
               </div>
             </div>
         </div>
-        <div class="col ms-2">
+        <div class="col arti">
             <div class="card">
               <h5 class="card-header text-center">Arti Ekspresi Idiomatik</h5>
               <div class="card-body">
