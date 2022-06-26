@@ -1,1 +1,1 @@
-Dataset for Identofikasi and klasifikasi
+Dataset for Identifikasi and klasifikasi idiom
